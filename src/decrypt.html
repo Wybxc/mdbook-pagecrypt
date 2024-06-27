@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="robots" content="noindex, nofollow">
+    <title>Protected Page</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.classless.min.css" />
+</head>
+
+<body>
+    <noscript>
+        This page requires JavaScript.
+    </noscript>
+
+    <dialog open>
+        <article>
+            <header>
+                <p><strong id="msg">🗝️ This page is password protected.</strong></p>
+            </header>
+            <form id="form" onsubmit="event.preventDefault(); decrypt();">
+                <fieldset role="group">
+                    <input type="password" id="pwd" name="pwd" aria-label="Password" placeholder="Password" autofocus />
+                    <input type="submit" id="submit" value="Submit" />
+                </fieldset>
+            </form>
+
+        </article>
+    </dialog>
+
+    <pre id="payload" data-r="{{ rounds }}" style="display: none;">data:;base64,{{ encrypted }}</pre>
+
+    <script>
+        const subtle = window.crypto.subtle || window.crypto.webkitSubtle
+
+        document.addEventListener("DOMContentLoaded", async function () {
+            const pwd = document.getElementById('pwd')
+            const msg = document.getElementById('msg')
+
+            if (!subtle) {
+                msg.innerText = 'Your browser does not support Web Cryptography.'
+                pwd.disabled = true
+                return
+            }
+
+            // Allow passwords to be automatically provided via the URI Fragment.
+            if (location.hash && location.hash.startsWith('#pwd=')) {
+                const parts = location.href.split('#pwd=')
+                pwd.value = parts[1]
+                history.replaceState(null, '', parts[0])
+            }
+
+            // Attempt to decrypt with saved password.
+            if (sessionStorage.hashedPassword) {
+                const payloadBundle = await fetchPayload()
+                if (!payloadBundle) {
+                    msg.innerText = '❌ Invalid payload.'
+                    msg.ariaBusy = 'false'
+                    console.error('Invalid payload')
+                    return
+                }
+                const { salt, nonce, cipherText } = payloadBundle
+
+                const msg = document.getElementById('msg')
+                const key = JSON.parse(sessionStorage.hashedPassword)
+                const derivedKey = await subtle.importKey('jwk', key, 'AES-GCM', true, ['decrypt'])
+                try {
+                    const decrypted = await subtle.decrypt({ name: 'AES-GCM', iv: nonce }, derivedKey, cipherText)
+                    const decoded = new TextDecoder().decode(decrypted)
+                    console.log("Decrypted with saved password")
+                    finish(decoded, 0)
+                } catch (e) {
+                    console.error("Failed to decrypt with saved password")
+                    console.error(e)
+                    sessionStorage.removeItem('hashedPassword')
+                }
+            }
+        })
+
+        async function decrypt() {
+            const msg = document.getElementById('msg')
+            const pwd = document.getElementById('pwd')
+            const submit = document.getElementById('submit')
+            const payload = document.getElementById('payload')
+
+            msg.innerText = 'Decrypting...'
+            msg.ariaBusy = 'true'
+            submit.disabled = true
+
+            const password = pwd.value
+            const rounds = parseInt(payload.dataset.r)
+            if (!rounds) {
+                msg.innerText = '❌ Invalid payload.'
+                msg.ariaBusy = 'false'
+                console.error('Invalid round count')
+                return
+            }
+
+            const payloadBundle = await fetchPayload()
+            if (!payloadBundle) {
+                msg.innerText = '❌ Invalid payload.'
+                msg.ariaBusy = 'false'
+                console.error('Invalid payload')
+                return
+            }
+            const { salt, nonce, cipherText } = payloadBundle
+
+            const key = await subtle.importKey(
+                'raw',
+                new TextEncoder().encode(password),
+                'PBKDF2',
+                false,
+                ['deriveKey']
+            )
+            const derivedKey = await subtle.deriveKey(
+                { name: 'PBKDF2', salt, iterations: rounds, hash: 'SHA-256' },
+                key,
+                { name: 'AES-GCM', length: 256 },
+                true,
+                ['decrypt']
+            )
+            try {
+                const decrypted = await subtle.decrypt(
+                    { name: 'AES-GCM', iv: nonce },
+                    derivedKey,
+                    cipherText
+                )
+
+                const decoded = new TextDecoder().decode(decrypted)
+                console.log("Decrypted with given password")
+                sessionStorage.hashedPassword = JSON.stringify(await subtle.exportKey('jwk', derivedKey))
+
+                finish(decoded, 500)
+            } catch (e) {
+                msg.innerText = '❌ Wrong password.'
+                msg.ariaBusy = 'false'
+                submit.disabled = false
+                console.error('Wrong password')
+                console.error(e)
+                return
+            }
+        }
+
+        async function fetchPayload() {
+            const payload = document.getElementById('payload')
+
+            const data = await fetch(payload.innerText)
+            if (!data.ok) {
+                return false
+            }
+            const encrypted = await data.arrayBuffer()
+            const salt = encrypted.slice(0, 32)
+            const nonce = encrypted.slice(32, 44)
+            const cipherText = encrypted.slice(44)
+
+            return { salt, nonce, cipherText }
+        }
+
+        function finish(decrypted, timeout) {
+            const msg = document.getElementById('msg')
+            msg.innerText = '✅ Decrypted.'
+            msg.ariaBusy = 'false'
+            setTimeout(function () {
+                document.open()
+                document.write(decrypted)
+                document.close()
+            }, timeout || 0)
+        }
+    </script>
+
+</body>
+
+</html>
