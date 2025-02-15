@@ -5,6 +5,8 @@ edition = "2021"
 license = "MPL-2.0"
 repository = "https://github.com/Wybxc/mdbook-pagecrypt"
 description = "Encrypt your mdbook-built site with password protection."
+categories = ["cryptography"]
+keywords = ["mdbook", "password", "site", "encryption", "protection"]
 
 [dependencies]
 aes-gcm = { version = "0.10.3", features = ["std"] }
