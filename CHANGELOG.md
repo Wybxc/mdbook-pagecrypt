@@ -11,7 +11,5 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Other
 
-- update dependencies
-- *(ci)* add GitHub Actions workflow for Release-plz automation
-- add categories and keywords to Cargo.toml
-- link to docs in readme
+- Update dependencies
+- Add categories and keywords to Cargo.toml
