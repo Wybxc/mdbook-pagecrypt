@@ -12,11 +12,9 @@ fn main() {
 }
 
 fn minify_html(input_path: impl AsRef<Path>, output_path: &Path) {
-    let cfg = minify_html::Cfg {
-        preserve_brace_template_syntax: true,
-        minify_js: true,
-        ..minify_html::Cfg::spec_compliant()
-    };
+    let mut cfg = minify_html::Cfg::new();
+    cfg.preserve_brace_template_syntax = true;
+    cfg.minify_js = true;
 
     let html = std::fs::read(input_path).expect("Failed to read HTML template");
     let html = minify_html::minify(&html, &cfg);

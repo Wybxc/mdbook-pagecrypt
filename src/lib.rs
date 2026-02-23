@@ -156,11 +156,11 @@ impl PageCrypt {
 
 fn getrandom<const N: usize>() -> [u8; N] {
     let mut buf = [0; N];
-    if getrandom::getrandom(&mut buf).is_err() {
+    if getrandom::fill(&mut buf).is_err() {
         log::warn!(
             "Fail to generate random from system entropy. Using pseudo-random generator instead."
         );
-        rand::thread_rng().fill(buf.as_mut_slice());
+        rand::rng().fill_bytes(&mut buf);
     }
     buf
 }
