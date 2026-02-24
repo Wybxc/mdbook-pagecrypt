@@ -1,7 +1,6 @@
 [book]
 authors = ["忘忧北萱草"]
 language = "en"
-multilingual = false
 src = "src"
 title = "mdbook-pagecrypt"
 
