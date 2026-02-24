@@ -2,9 +2,10 @@ use std::io;
 use std::path::Path;
 
 use anyhow::{Context, Result};
-use mdbook::renderer::{HtmlHandlebars, RenderContext};
-use mdbook::{BookItem, Renderer};
+use mdbook_html::HtmlHandlebars;
 use mdbook_pagecrypt::PageCrypt;
+use mdbook_renderer::book::BookItem;
+use mdbook_renderer::{RenderContext, Renderer};
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -30,9 +31,9 @@ fn main() -> Result<()> {
 
     let cfg: PageCryptConfig = ctx
         .config
-        .get_deserialized_opt("output.pagecrypt")
-        .unwrap_or_default()
-        .with_context(|| "Config entry 'output.pagecrypt' not found")?;
+        .get("output.pagecrypt")
+        .with_context(|| "Failed to parse config entry 'output.pagecrypt'")?
+        .unwrap_or_default();
 
     let pagecrypt = PageCrypt::builder()
         .password(cfg.password)
