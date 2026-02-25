@@ -7,21 +7,18 @@ use mdbook_pagecrypt::PageCrypt;
 use mdbook_renderer::book::BookItem;
 use mdbook_renderer::{RenderContext, Renderer};
 use serde::{Deserialize, Serialize};
+use serde_json::Value;
 
 #[derive(Debug, Serialize, Deserialize)]
-#[serde(default, rename_all = "kebab-case")]
+#[serde(rename_all = "kebab-case")]
 pub struct PageCryptConfig {
     pub password: String,
+    #[serde(default = "default_rounds")]
     pub rounds: u32,
 }
 
-impl Default for PageCryptConfig {
-    fn default() -> Self {
-        Self {
-            password: "pagecrypt".to_string(),
-            rounds: 600_000,
-        }
-    }
+fn default_rounds() -> u32 {
+    600_000
 }
 
 fn main() -> Result<()> {
@@ -29,11 +26,18 @@ fn main() -> Result<()> {
     let ctx =
         RenderContext::from_json(&mut stdin).with_context(|| "Failed to read JSON from stdin")?;
 
-    let cfg: PageCryptConfig = ctx
+    let cfg_value: Value = ctx
         .config
         .get("output.pagecrypt")
         .with_context(|| "Failed to parse config entry 'output.pagecrypt'")?
-        .unwrap_or_default();
+        .context("password is required in [output.pagecrypt]")?;
+
+    let cfg: PageCryptConfig = serde_json::from_value(cfg_value.clone())
+        .with_context(|| format!("Failed to deserialize pagecrypt config: {:?}", cfg_value))?;
+
+    if cfg.password.is_empty() {
+        anyhow::bail!("password is required in [output.pagecrypt]");
+    }
 
     let pagecrypt = PageCrypt::builder()
         .password(cfg.password)
