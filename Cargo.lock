@@ -977,6 +977,7 @@ dependencies = [
  "pbkdf2",
  "rand 0.10.0",
  "serde",
+ "serde_json",
  "sha2",
  "thiserror",
  "urlencoding",

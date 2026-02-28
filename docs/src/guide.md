@@ -20,7 +20,7 @@ And then run `mdbook build` to encrypt the site.
 
 ## Configuration
 
-- `password`: The password to encrypt the site with. If not specified, defaults to `pagecrypt`.
+- `password`: The password to encrypt the site with. **Required.**
 - `rounds`: The number of rounds to use for password hashing. Default is 600_000. Bigger numbers are safer but slower.
 
 ## Security
