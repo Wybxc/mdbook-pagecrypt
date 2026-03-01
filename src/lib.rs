@@ -13,6 +13,10 @@ use thiserror::Error;
 /// Error type for [`PageCrypt`].
 #[derive(Debug, Error)]
 pub enum Error {
+    /// Missing password
+    #[error("Password is required")]
+    MissingPassword,
+
     /// Fail to encrypt payload
     #[error("Fail to encrypt")]
     EncryptError(#[from] aes_gcm::Error),
@@ -34,12 +38,6 @@ pub struct PageCryptBuilder {
     pub password: String,
     /// Number of rounds
     pub rounds: u32,
-}
-
-impl Default for PageCryptBuilder {
-    fn default() -> Self {
-        Self::new()
-    }
 }
 
 impl PageCryptBuilder {
@@ -65,11 +63,14 @@ impl PageCryptBuilder {
 
     /// Build [`PageCrypt`].
     pub fn build(self) -> Result<PageCrypt> {
+        if self.password.is_empty() {
+            return Err(Error::MissingPassword);
+        }
         if self.rounds < 100_000 {
             log::warn!(
                 "The specified number of password rounds ({}) is not secure. If possible, use at least 100_000 or more.",
                 self.rounds
-            )
+            );
         }
 
         let salt = getrandom::<SALT_LEN>();
