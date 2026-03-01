@@ -77,9 +77,16 @@ fn main() -> Result<()> {
 
     // Encrypt the print.html
     if Path::new("print.html").exists() {
-        let index = std::fs::read("print.html")?;
-        let index = pagecrypt.encrypt_html(&index)?;
-        std::fs::write("print.html", index).with_context(|| "Failed to write print.html")?;
+        let print = std::fs::read("print.html")?;
+        let print = pagecrypt.encrypt_html(&print)?;
+        std::fs::write("print.html", print).with_context(|| "Failed to write print.html")?;
+    }
+
+    // Encrypt the toc.html
+    if Path::new("toc.html").exists() {
+        let toc = std::fs::read("toc.html")?;
+        let toc = pagecrypt.encrypt_html(&toc)?;
+        std::fs::write("toc.html", toc).with_context(|| "Failed to write toc.html")?;
     }
 
     // Encrypt the search index
