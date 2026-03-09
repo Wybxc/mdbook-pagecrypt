@@ -42,6 +42,7 @@ pub struct PageCryptBuilder {
 
 impl PageCryptBuilder {
     /// Create a new [`PageCryptBuilder`].
+    #[allow(clippy::new_without_default)]
     pub fn new() -> Self {
         Self {
             password: String::new(),
